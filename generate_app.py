@@ -569,9 +569,9 @@ class MainActivity : AppCompatActivity() {
                 runOnUiThread {
                     if (formatted.isNotEmpty()) {
                         etIntervals.setText(formatted)
-                        tvLog.text = "$statusMsg\nЗнайдено інтервали: $formatted"
+                        tvLog.text = "$statusMsg\\nЗнайдено інтервали: $formatted"
                     } else {
-                        tvLog.text = "$statusMsg\nМожете ввести інтервали вручну (напр. 09:00-13:00)"
+                        tvLog.text = "$statusMsg\\nМожете ввести інтервали вручну (напр. 09:00-13:00)"
                     }
                 }
             }
@@ -604,7 +604,9 @@ class MainActivity : AppCompatActivity() {
 }
 
 for path, content in files.items():
-    os.makedirs(os.path.dirname(path), exist_ok=True)
+    parent = os.path.dirname(path)
+    if parent:
+        os.makedirs(parent, exist_ok=True)
     with open(path, "w", encoding="utf-8") as f:
         f.write(content)
 
