@@ -2,7 +2,7 @@ name: Build Svitlo Widget APK
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ main ]
   workflow_dispatch:
 
 jobs:
@@ -10,29 +10,44 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+
+      - name: Fix generate_app.py
+        run: |
+          python3 - << 'EOF'
+          with open("generate_app.py", "r", encoding="utf-8") as f:
+              text = f.read()
+          text = text.replace(
+              "os.makedirs(os.path.dirname(path), exist_ok=True)",
+              "if os.path.dirname(path): os.makedirs(os.path.dirname(path), exist_ok=True)"
+          )
+          with open("generate_app.py", "w", encoding="utf-8") as f:
+              f.write(text)
+          EOF
 
       - name: Generate Android project
         run: python generate_app.py
 
-      - uses: actions/setup-java@v4
+      - name: Set up Java
+        uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
 
       - name: Setup Gradle Wrapper
-        run: |
-          gradle wrapper --gradle-version 8.7
-          chmod +x gradlew
+        run: gradle wrapper --gradle-version 8.7
 
       - name: Build Debug APK
         run: ./gradlew assembleDebug
 
-      - uses: actions/upload-artifact@v4
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
         with:
-          name: SvitloWidget-APK
+          name: Svitlo-debug-apk
           path: app/build/outputs/apk/debug/app-debug.apk
