@@ -110,69 +110,166 @@ dependencies {
     android:updatePeriodMillis="900000"
     android:widgetCategory="home_screen" />
 """,
+    "app/src/main/res/drawable/widget_bg_card.xml": """<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <corners android:radius="20dp" />
+    <gradient
+        android:angle="135"
+        android:startColor="#131C31"
+        android:endColor="#0B1120" />
+    <stroke
+        android:width="1dp"
+        android:color="#263554" />
+</shape>
+""",
+    "app/src/main/res/drawable/widget_glow_light_on.xml": """<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <corners android:radius="14dp" />
+    <gradient
+        android:angle="90"
+        android:startColor="#143D33"
+        android:endColor="#0D241F" />
+    <stroke
+        android:width="1dp"
+        android:color="#2DD4BF" />
+</shape>
+""",
+    "app/src/main/res/drawable/widget_glow_outage.xml": """<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <corners android:radius="14dp" />
+    <gradient
+        android:angle="90"
+        android:startColor="#421820"
+        android:endColor="#230D13" />
+    <stroke
+        android:width="1dp"
+        android:color="#FB7185" />
+</shape>
+""",
+    "app/src/main/res/drawable/widget_glow_neutral.xml": """<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <corners android:radius="14dp" />
+    <gradient
+        android:angle="90"
+        android:startColor="#3A2B12"
+        android:endColor="#1F170A" />
+    <stroke
+        android:width="1dp"
+        android:color="#FBBF24" />
+</shape>
+""",
+    "app/src/main/res/drawable/widget_pill_tag.xml": """<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <corners android:radius="999dp" />
+    <solid android:color="#1E293B" />
+</shape>
+""",
     "app/src/main/res/layout/widget_layout.xml": """<?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/widgetRoot"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#111827"
+    android:background="@drawable/widget_bg_card"
+    android:gravity="center_horizontal"
     android:orientation="vertical"
-    android:padding="12dp">
+    android:padding="10dp">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:gravity="center_vertical"
         android:orientation="horizontal">
 
         <TextView
             android:id="@+id/tvWidgetTag"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/widget_pill_tag"
+            android:paddingHorizontal="8dp"
+            android:paddingVertical="2dp"
+            android:text="Черга 2.2"
+            android:textColor="#7DD3FC"
+            android:textSize="11sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tvWidgetAddress"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_marginHorizontal="6dp"
             android:layout_weight="1"
-            android:text="Черга 1.1"
-            android:textColor="#93C5FD"
-            android:textSize="12sp"
-            android:textStyle="bold" />
+            android:ellipsize="end"
+            android:gravity="center"
+            android:maxLines="1"
+            android:text="Шаргород"
+            android:textColor="#94A3B8"
+            android:textSize="10sp" />
 
         <TextView
             android:id="@+id/btnWidgetRefresh"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:paddingStart="8dp"
+            android:background="@drawable/widget_pill_tag"
+            android:paddingHorizontal="8dp"
+            android:paddingVertical="2dp"
             android:text="↻"
-            android:textColor="#E5E7EB"
-            android:textSize="16sp" />
+            android:textColor="#E2E8F0"
+            android:textSize="14sp"
+            android:textStyle="bold" />
     </LinearLayout>
 
-    <TextView
-        android:id="@+id/tvWidgetAddress"
+    <LinearLayout
+        android:id="@+id/widgetGlowBox"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:ellipsize="end"
-        android:maxLines="1"
-        android:text="Адреса не задана"
-        android:textColor="#9CA3AF"
-        android:textSize="11sp" />
+        android:layout_height="0dp"
+        android:layout_marginTop="6dp"
+        android:layout_weight="1"
+        android:background="@drawable/widget_glow_neutral"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:paddingHorizontal="8dp"
+        android:paddingVertical="6dp">
 
-    <TextView
-        android:id="@+id/tvWidgetStatus"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
-        android:text="Оновлення..."
-        android:textColor="#FFFFFF"
-        android:textSize="15sp"
-        android:textStyle="bold" />
+        <TextView
+            android:id="@+id/tvWidgetStatus"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:maxLines="1"
+            android:text="Світло є"
+            android:textColor="#34D399"
+            android:textSize="17sp"
+            android:textStyle="bold" />
 
-    <TextView
-        android:id="@+id/tvWidgetCountdown"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="2dp"
-        android:text="-- год -- хв"
-        android:textColor="#34D399"
-        android:textSize="18sp"
-        android:textStyle="bold" />
+        <TextView
+            android:id="@+id/tvWidgetEventTime"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:gravity="center"
+            android:maxLines="1"
+            android:text="Вимкнення о 22:00"
+            android:textColor="#34D399"
+            android:textSize="13sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tvWidgetCountdown"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:gravity="center"
+            android:maxLines="1"
+            android:text="Залишилось: 2 год 33 хв"
+            android:textColor="#6EE7B7"
+            android:textSize="13sp"
+            android:textStyle="bold" />
+    </LinearLayout>
 </LinearLayout>
 """,
     "app/src/main/res/layout/activity_main.xml": """<?xml version="1.0" encoding="utf-8"?>
@@ -210,7 +307,7 @@ dependencies {
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:hint="Населений пункт (наприклад, м. Вінниця або Шаргород)"
+            android:hint="Населений пункт (наприклад, Шаргород)"
             android:inputType="text" />
 
         <EditText
@@ -229,20 +326,42 @@ dependencies {
             android:hint="Номер будинку"
             android:inputType="text" />
 
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/btnReloadSite"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="6dp"
+                android:layout_weight="1"
+                android:text="Оновити сайт" />
+
+            <Button
+                android:id="@+id/btnFetch"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="6dp"
+                android:layout_weight="1"
+                android:text="Розпарсити зі сторінки" />
+        </LinearLayout>
+
+        <WebView
+            android:id="@+id/webView"
+            android:layout_width="match_parent"
+            android:layout_height="260dp"
+            android:layout_marginTop="10dp" />
+
         <EditText
             android:id="@+id/etIntervals"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
+            android:layout_marginTop="10dp"
             android:hint="Інтервали відключень (наприклад: 08:00-12:00, 18:00-22:00)"
             android:inputType="text" />
-
-        <Button
-            android:id="@+id/btnFetch"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:text="Отримати і розпарсити графік" />
 
         <Button
             android:id="@+id/btnSave"
@@ -255,15 +374,13 @@ dependencies {
             android:id="@+id/tvLog"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="14dp"
-            android:text="Статус: очікування дій" />
+            android:layout_marginTop="12dp"
+            android:text="Статус: зачекайте перевірку безпеки та натисніть Оновити сайт" />
     </LinearLayout>
 </ScrollView>
 """,
     "app/src/main/java/com/svitlo/vinnytsia/ScheduleParser.kt": """package com.svitlo.vinnytsia
 
-import java.net.HttpURLConnection
-import java.net.URL
 import java.util.Calendar
 import java.util.Locale
 
@@ -272,68 +389,73 @@ data class TimeWindow(val startMinutes: Int, val endMinutes: Int)
 data class WidgetState(
     val isOutageNow: Boolean,
     val minutesLeft: Int,
-    val nextEventText: String,
+    val eventTimeText: String,
+    val countdownText: String,
     val rawIntervals: String
 )
 
 object ScheduleParser {
 
-    private val candidateUrls = listOf(
-        "https://www.voe.com.ua/disconnections/one-page",
-        "https://www.voe.com.ua/disconnections",
-        "https://voe.com.ua/disconnections"
-    )
-
-    fun fetchAndParseIntervals(queueTag: String, city: String, street: String, house: String): Pair<List<TimeWindow>, String> {
-        var lastError = "Дані не знайдено"
-        for (urlStr in candidateUrls) {
-            try {
-                val conn = (URL(urlStr).openConnection() as HttpURLConnection).apply {
-                    connectTimeout = 8000
-                    readTimeout = 8000
-                    requestMethod = "GET"
-                    setRequestProperty("User-Agent", "Mozilla/5.0")
-                }
-                if (conn.responseCode in 200..299) {
-                    val body = conn.inputStream.bufferedReader().use { it.readText() }
-                    val cleanText = body.replace(Regex("<[^>]*>"), " ")
-                    val addressNeedle = listOf(city, street, house)
-                        .map { it.trim().lowercase(Locale.getDefault()) }
-                        .filter { it.isNotEmpty() }
-
-                    val matchedQueue = extractQueueFromText(cleanText, queueTag, addressNeedle)
-                    val windows = parseWindowsFromText(matchedQueue ?: cleanText)
-                    if (windows.isNotEmpty()) {
-                        return Pair(windows, "Завантажено з $urlStr")
-                    }
-                    lastError = "Сторінку отримано ($urlStr), але інтервали не розпізнано"
-                } else {
-                    lastError = "HTTP ${conn.responseCode} на $urlStr"
-                }
-                conn.disconnect()
-            } catch (e: Exception) {
-                lastError = e.message ?: "Помилка мережі"
-            }
+    fun parseFromPageText(rawPageText: String, queueTag: String, city: String, street: String, house: String): Pair<List<TimeWindow>, String> {
+        val unescaped = unescapeJsString(rawPageText)
+        val normalized = unescaped.replace(Regex("\\\\s+"), " ").trim()
+        if (normalized.isEmpty()) {
+            return Pair(emptyList(), "Сторінка ще порожня або не завантажилась")
         }
-        return Pair(emptyList(), lastError)
+
+        val addressParts = listOf(city, street, house)
+            .map { it.trim().lowercase(Locale.getDefault()) }
+            .filter { it.isNotEmpty() }
+
+        val scoped = extractRelevantSection(normalized, queueTag, addressParts)
+        val windows = parseWindowsFromText(scoped ?: normalized)
+        return if (windows.isNotEmpty()) {
+            val sourceLabel = if (scoped != null) "знайдено у фрагменті адреси/черги" else "знайдено на сторінці"
+            Pair(windows, "Інтервали розпарсено ($sourceLabel)")
+        } else {
+            Pair(emptyList(), "На відкритій сторінці інтервали ГГ:ХХ-ГГ:ХХ не знайдено")
+        }
     }
 
-    private fun extractQueueFromText(text: String, queueTag: String, addressParts: List<String>): String? {
+    private fun unescapeJsString(input: String): String {
+        val trimmed = input.trim()
+        val unwrapped = if (trimmed.startsWith("\\"") && trimmed.endsWith("\\"") && trimmed.length >= 2) {
+            trimmed.substring(1, trimmed.length - 1)
+        } else {
+            trimmed
+        }
+        return unwrapped
+            .replace("\\\\n", "\\n")
+            .replace("\\\\r", "\\r")
+            .replace("\\\\t", "\\t")
+            .replace("\\\\\\"", "\\"")
+    }
+
+    private fun extractRelevantSection(text: String, queueTag: String, addressParts: List<String>): String? {
         val lower = text.lowercase(Locale.getDefault())
-        if (addressParts.isNotEmpty()) {
-            val idxAddr = lower.indexOf(addressParts.first())
-            if (idxAddr >= 0) {
-                val start = maxOf(0, idxAddr - 120)
-                val end = minOf(text.length, idxAddr + 400)
-                return text.substring(start, end)
+        for (part in addressParts) {
+            val idx = lower.indexOf(part)
+            if (idx >= 0) {
+                val start = maxOf(0, idx - 80)
+                val end = minOf(text.length, idx + 450)
+                val slice = text.substring(start, end)
+                if (parseWindowsFromText(slice).isNotEmpty()) {
+                    return slice
+                }
             }
         }
-        val tagLower = queueTag.lowercase(Locale.getDefault())
-        val idxTag = lower.indexOf(tagLower)
-        if (idxTag >= 0) {
-            val start = maxOf(0, idxTag - 40)
-            val end = minOf(text.length, idxTag + 350)
-            return text.substring(start, end)
+
+        val tagLower = queueTag.trim().lowercase(Locale.getDefault())
+        if (tagLower.isNotEmpty()) {
+            val idxTag = lower.indexOf(tagLower)
+            if (idxTag >= 0) {
+                val start = maxOf(0, idxTag - 40)
+                val end = minOf(text.length, idxTag + 350)
+                val slice = text.substring(start, end)
+                if (parseWindowsFromText(slice).isNotEmpty()) {
+                    return slice
+                }
+            }
         }
         return null
     }
@@ -357,9 +479,16 @@ object ScheduleParser {
         return result.distinctBy { it.startMinutes to it.endMinutes }.sortedBy { it.startMinutes }
     }
 
+    private fun fmtMin(minutes: Int): String {
+        val clamped = minutes.coerceIn(0, 1440)
+        val h = clamped / 60
+        val m = clamped % 60
+        return String.format(Locale.US, "%02d:%02d", h, m)
+    }
+
     fun formatWindows(windows: List<TimeWindow>): String {
         return windows.joinToString(", ") { w ->
-            String.format(Locale.US, "%02d:%02d-%02d:%02d", w.startMinutes / 60, w.startMinutes % 60, w.endMinutes / 60, w.endMinutes % 60)
+            "${fmtMin(w.startMinutes)}-${fmtMin(w.endMinutes)}"
         }
     }
 
@@ -369,7 +498,8 @@ object ScheduleParser {
             return WidgetState(
                 isOutageNow = false,
                 minutesLeft = -1,
-                nextEventText = "Немає даних графіка",
+                eventTimeText = "--:--",
+                countdownText = "Натисніть для налаштування",
                 rawIntervals = ""
             )
         }
@@ -383,7 +513,8 @@ object ScheduleParser {
                 return WidgetState(
                     isOutageNow = true,
                     minutesLeft = diff,
-                    nextEventText = String.format(Locale.US, "Увімкнення о %02d:%02d", w.endMinutes / 60, w.endMinutes % 60),
+                    eventTimeText = "Увімкнення о ${fmtMin(w.endMinutes)}",
+                    countdownText = "Залишилось: ${formatMinutesCountdown(diff)}",
                     rawIntervals = rawStr
                 )
             }
@@ -395,7 +526,8 @@ object ScheduleParser {
             return WidgetState(
                 isOutageNow = false,
                 minutesLeft = diff,
-                nextEventText = String.format(Locale.US, "Вимкнення о %02d:%02d", nextOutage.startMinutes / 60, nextOutage.startMinutes % 60),
+                eventTimeText = "Вимкнення о ${fmtMin(nextOutage.startMinutes)}",
+                countdownText = "Залишилось: ${formatMinutesCountdown(diff)}",
                 rawIntervals = rawStr
             )
         }
@@ -405,16 +537,17 @@ object ScheduleParser {
         return WidgetState(
             isOutageNow = false,
             minutesLeft = diffTomorrow,
-            nextEventText = String.format(Locale.US, "Вимкнення завтра о %02d:%02d", firstTomorrow.startMinutes / 60, firstTomorrow.startMinutes % 60),
+            eventTimeText = "Вимкнення завтра о ${fmtMin(firstTomorrow.startMinutes)}",
+            countdownText = "Залишилось: ${formatMinutesCountdown(diffTomorrow)}",
             rawIntervals = rawStr
         )
     }
 
     fun formatMinutesCountdown(totalMinutes: Int): String {
-        if (totalMinutes < 0) return "-- год -- хв"
+        if (totalMinutes < 0) return "-- хв"
         val h = totalMinutes / 60
         val m = totalMinutes % 60
-        return "${h} год ${m} хв"
+        return if (h > 0) "${h} год ${m} хв" else "${m} хв"
     }
 }
 """,
@@ -460,7 +593,7 @@ class SvitloWidget : AppWidgetProvider() {
 
         fun updateSingleWidget(context: Context, mgr: AppWidgetManager, widgetId: Int) {
             val prefs = context.getSharedPreferences("svitlo_prefs", Context.MODE_PRIVATE)
-            val queueTag = prefs.getString("queue_tag", "1.1") ?: "1.1"
+            val queueTag = prefs.getString("queue_tag", "2.2") ?: "2.2"
             val city = prefs.getString("city", "") ?: ""
             val street = prefs.getString("street", "") ?: ""
             val house = prefs.getString("house", "") ?: ""
@@ -473,20 +606,32 @@ class SvitloWidget : AppWidgetProvider() {
             views.setTextViewText(R.id.tvWidgetTag, "Черга $queueTag")
 
             val addrLine = listOf(city, street, house).filter { it.isNotBlank() }.joinToString(", ")
-            views.setTextViewText(R.id.tvWidgetAddress, if (addrLine.isNotBlank()) addrLine else "Адреса не вказана")
+            views.setTextViewText(R.id.tvWidgetAddress, if (addrLine.isNotBlank()) addrLine else "Адреса не задана")
 
             if (windows.isEmpty()) {
-                views.setTextViewText(R.id.tvWidgetStatus, "Немає інтервалів")
+                views.setInt(R.id.widgetGlowBox, "setBackgroundResource", R.drawable.widget_glow_neutral)
+                views.setTextViewText(R.id.tvWidgetStatus, "Немає графіка")
+                views.setTextColor(R.id.tvWidgetStatus, Color.parseColor("#FBBF24"))
+                views.setTextViewText(R.id.tvWidgetEventTime, "--:--")
+                views.setTextColor(R.id.tvWidgetEventTime, Color.parseColor("#FBBF24"))
                 views.setTextViewText(R.id.tvWidgetCountdown, "Натисніть для налаштування")
-                views.setTextColor(R.id.tvWidgetCountdown, Color.parseColor("#FBBF24"))
+                views.setTextColor(R.id.tvWidgetCountdown, Color.parseColor("#FDE68A"))
             } else if (state.isOutageNow) {
-                views.setTextViewText(R.id.tvWidgetStatus, "ВІДКЛЮЧЕННЯ • ${state.nextEventText}")
-                views.setTextViewText(R.id.tvWidgetCountdown, "До світла: ${ScheduleParser.formatMinutesCountdown(state.minutesLeft)}")
-                views.setTextColor(R.id.tvWidgetCountdown, Color.parseColor("#F87171"))
+                views.setInt(R.id.widgetGlowBox, "setBackgroundResource", R.drawable.widget_glow_outage)
+                views.setTextViewText(R.id.tvWidgetStatus, "Відключено")
+                views.setTextColor(R.id.tvWidgetStatus, Color.parseColor("#F87171"))
+                views.setTextViewText(R.id.tvWidgetEventTime, state.eventTimeText)
+                views.setTextColor(R.id.tvWidgetEventTime, Color.parseColor("#F87171"))
+                views.setTextViewText(R.id.tvWidgetCountdown, state.countdownText)
+                views.setTextColor(R.id.tvWidgetCountdown, Color.parseColor("#FCA5A5"))
             } else {
-                views.setTextViewText(R.id.tvWidgetStatus, "СВІТЛО Є • ${state.nextEventText}")
-                views.setTextViewText(R.id.tvWidgetCountdown, "Залишилось: ${ScheduleParser.formatMinutesCountdown(state.minutesLeft)}")
-                views.setTextColor(R.id.tvWidgetCountdown, Color.parseColor("#34D399"))
+                views.setInt(R.id.widgetGlowBox, "setBackgroundResource", R.drawable.widget_glow_light_on)
+                views.setTextViewText(R.id.tvWidgetStatus, "Світло є")
+                views.setTextColor(R.id.tvWidgetStatus, Color.parseColor("#34D399"))
+                views.setTextViewText(R.id.tvWidgetEventTime, state.eventTimeText)
+                views.setTextColor(R.id.tvWidgetEventTime, Color.parseColor("#34D399"))
+                views.setTextViewText(R.id.tvWidgetCountdown, state.countdownText)
+                views.setTextColor(R.id.tvWidgetCountdown, Color.parseColor("#6EE7B7"))
             }
 
             val openIntent = Intent(context, MainActivity::class.java)
@@ -510,17 +655,23 @@ class SvitloWidget : AppWidgetProvider() {
 """,
     "app/src/main/java/com/svitlo/vinnytsia/MainActivity.kt": """package com.svitlo.vinnytsia
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.os.Bundle
+import android.webkit.CookieManager
+import android.webkit.WebChromeClient
+import android.webkit.WebView
+import android.webkit.WebViewClient
 import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.EditText
 import android.widget.Spinner
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import java.util.concurrent.Executors
 
 class MainActivity : AppCompatActivity() {
+
+    private val targetUrl = "https://disconnection.voe.com.ua/"
 
     private val tags = listOf(
         "1.1", "1.2", "2.1", "2.2",
@@ -528,6 +679,7 @@ class MainActivity : AppCompatActivity() {
         "5.1", "5.2", "6.1", "6.2"
     )
 
+    @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -537,15 +689,17 @@ class MainActivity : AppCompatActivity() {
         val etCity = findViewById<EditText>(R.id.etCity)
         val etStreet = findViewById<EditText>(R.id.etStreet)
         val etHouse = findViewById<EditText>(R.id.etHouse)
-        val etIntervals = findViewById<EditText>(R.id.etIntervals)
+        val btnReloadSite = findViewById<Button>(R.id.btnReloadSite)
         val btnFetch = findViewById<Button>(R.id.btnFetch)
+        val webView = findViewById<WebView>(R.id.webView)
+        val etIntervals = findViewById<EditText>(R.id.etIntervals)
         val btnSave = findViewById<Button>(R.id.btnSave)
         val tvLog = findViewById<TextView>(R.id.tvLog)
 
         val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, tags)
         spQueue.adapter = adapter
 
-        val savedTag = prefs.getString("queue_tag", "1.1") ?: "1.1"
+        val savedTag = prefs.getString("queue_tag", "2.2") ?: "2.2"
         val idx = tags.indexOf(savedTag).coerceAtLeast(0)
         spQueue.setSelection(idx)
 
@@ -554,25 +708,51 @@ class MainActivity : AppCompatActivity() {
         etHouse.setText(prefs.getString("house", ""))
         etIntervals.setText(prefs.getString("intervals_raw", ""))
 
-        val executor = Executors.newSingleThreadExecutor()
+        CookieManager.getInstance().setAcceptCookie(true)
+        CookieManager.getInstance().setAcceptThirdPartyCookies(webView, true)
+
+        webView.settings.apply {
+            javaScriptEnabled = true
+            domStorageEnabled = true
+            databaseEnabled = true
+            loadWithOverviewMode = true
+            useWideViewPort = true
+        }
+        webView.webChromeClient = WebChromeClient()
+        webView.webViewClient = object : WebViewClient() {
+            override fun onPageFinished(view: WebView?, url: String?) {
+                super.onPageFinished(view, url)
+                tvLog.text = "Сторінка завантажена (${url ?: targetUrl}). За потреби оновіть список і натисніть Розпарсити зі сторінки."
+            }
+        }
+        webView.loadUrl(targetUrl)
+
+        btnReloadSite.setOnClickListener {
+            tvLog.text = "Оновлення сторінки..."
+            webView.reload()
+        }
 
         btnFetch.setOnClickListener {
             val qTag = tags[spQueue.selectedItemPosition]
             val city = etCity.text.toString().trim()
             val street = etStreet.text.toString().trim()
             val house = etHouse.text.toString().trim()
-            tvLog.text = "Запит до Вінницяобленерго..."
 
-            executor.execute {
-                val (windows, statusMsg) = ScheduleParser.fetchAndParseIntervals(qTag, city, street, house)
+            tvLog.text = "Зчитування інтервалів зі сторінки..."
+            webView.evaluateJavascript("(function() { return document.body ? document.body.innerText : ''; })();") { rawResult ->
+                val (windows, statusMsg) = ScheduleParser.parseFromPageText(
+                    rawResult ?: "",
+                    qTag,
+                    city,
+                    street,
+                    house
+                )
                 val formatted = ScheduleParser.formatWindows(windows)
-                runOnUiThread {
-                    if (formatted.isNotEmpty()) {
-                        etIntervals.setText(formatted)
-                        tvLog.text = "$statusMsg\\nЗнайдено інтервали: $formatted"
-                    } else {
-                        tvLog.text = "$statusMsg\\nМожете ввести інтервали вручну (напр. 09:00-13:00)"
-                    }
+                if (formatted.isNotEmpty()) {
+                    etIntervals.setText(formatted)
+                    tvLog.text = "$statusMsg\\nІнтервали: $formatted"
+                } else {
+                    tvLog.text = "$statusMsg\\nМожете ввести інтервали вручну (напр. 09:00-13:00)"
                 }
             }
         }
