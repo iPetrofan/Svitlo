@@ -193,23 +193,15 @@ dependencies {
             android:background="@drawable/widget_pill_tag"
             android:paddingHorizontal="8dp"
             android:paddingVertical="2dp"
-            android:text="Черга 2.2"
+            android:text="Вінницяобленерго"
             android:textColor="#7DD3FC"
             android:textSize="11sp"
             android:textStyle="bold" />
 
-        <TextView
-            android:id="@+id/tvWidgetAddress"
+        <View
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginHorizontal="6dp"
-            android:layout_weight="1"
-            android:ellipsize="end"
-            android:gravity="center"
-            android:maxLines="1"
-            android:text="Шаргород"
-            android:textColor="#BAE6FD"
-            android:textSize="10sp" />
+            android:layout_height="1dp"
+            android:layout_weight="1" />
 
         <TextView
             android:id="@+id/btnWidgetRefresh"
@@ -291,46 +283,10 @@ dependencies {
             android:textSize="20sp"
             android:textStyle="bold" />
 
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:text="Черга / підчерга (тег)"
-            android:textStyle="bold" />
-
-        <Spinner
-            android:id="@+id/spQueue"
-            android:layout_width="match_parent"
-            android:layout_height="48dp" />
-
-        <EditText
-            android:id="@+id/etCity"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:hint="Населений пункт (наприклад, Шаргород)"
-            android:inputType="text" />
-
-        <EditText
-            android:id="@+id/etStreet"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:hint="Вулиця"
-            android:inputType="text" />
-
-        <EditText
-            android:id="@+id/etHouse"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:hint="Номер будинку"
-            android:inputType="text" />
-
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
+            android:layout_marginTop="12dp"
             android:orientation="horizontal">
 
             <Button
@@ -353,15 +309,15 @@ dependencies {
         <WebView
             android:id="@+id/webView"
             android:layout_width="match_parent"
-            android:layout_height="260dp"
+            android:layout_height="320dp"
             android:layout_marginTop="10dp" />
 
         <EditText
             android:id="@+id/etIntervals"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
-            android:hint="Інтервали відключень (наприклад: 08:00-12:00, 18:00-22:00)"
+            android:layout_marginTop="12dp"
+            android:hint="Інтервали відключень (наприклад: 14:00-16:00, 18:00-19:00)"
             android:inputType="text" />
 
         <Button
@@ -397,44 +353,35 @@ data class WidgetState(
 
 object ScheduleParser {
 
-    fun parseFromPageText(rawPageText: String, queueTag: String, city: String, street: String, house: String): Pair<List<TimeWindow>, String> {
-        val unescaped = unescapeJsString(rawPageText)
-        val normalized = unescaped.replace(Regex("\\\\s+"), " ").trim()
-        if (normalized.isEmpty()) {
+    fun parseActiveOutagesFromJsResult(rawJsResult: String): Pair<List<TimeWindow>, String> {
+        val unescaped = unescapeJsString(rawJsResult).trim()
+        if (unescaped.isEmpty() || unescaped == "null") {
             return Pair(emptyList(), "Сторінка ще порожня або не завантажилась")
         }
 
-        val hourSlots = extractHourSlots(normalized)
-        if (hourSlots.isNotEmpty()) {
-            return Pair(hourSlots, "Розпарсено годинні інтервали (${hourSlots.size})")
-        }
-
-        val addressParts = listOf(city, street, house)
-            .map { it.trim().lowercase(Locale.getDefault()) }
-            .filter { it.isNotEmpty() }
-
-        val scoped = extractRelevantSection(normalized, queueTag, addressParts)
-        val windows = parseWindowsFromText(scoped ?: normalized)
-        return if (windows.isNotEmpty()) {
-            val sourceLabel = if (scoped != null) "знайдено у фрагменті адреси/черги" else "знайдено на сторінці"
-            Pair(windows, "Інтервали розпарсено ($sourceLabel)")
+        val windows = parseWindowsFromText(unescaped)
+        val merged = mergeAdjacentWindows(windows)
+        return if (merged.isNotEmpty()) {
+            Pair(merged, "Взято лише слоти відключень (${merged.size})")
         } else {
-            Pair(emptyList(), "На відкритій сторінці інтервали не знайдено")
+            Pair(emptyList(), "Активних позначок відключень у таблиці не знайдено")
         }
     }
 
-    private fun extractHourSlots(text: String): List<TimeWindow> {
-        val slotRegex = Regex(\"\"\"\\b([01]?\\d|2[0-3])\\s*[-–—]\\s*([01]?\\d|2[0-4])\\b\"\"\")
-        val slots = mutableListOf<TimeWindow>()
-        for (m in slotRegex.findAll(text)) {
-            val h1 = m.groupValues[1].toIntOrNull() ?: continue
-            val h2 = m.groupValues[2].toIntOrNull() ?: continue
-            if (h2 == h1 + 1 && h1 in 0..23 && h2 in 1..24) {
-                slots.add(TimeWindow(h1 * 60, h2 * 60))
+    private fun mergeAdjacentWindows(windows: List<TimeWindow>): List<TimeWindow> {
+        if (windows.isEmpty()) return emptyList()
+        val sorted = windows.sortedBy { it.startMinutes }
+        val result = mutableListOf(sorted.first())
+        for (i in 1 until sorted.size) {
+            val prev = result.last()
+            val cur = sorted[i]
+            if (cur.startMinutes <= prev.endMinutes) {
+                result[result.lastIndex] = TimeWindow(prev.startMinutes, maxOf(prev.endMinutes, cur.endMinutes))
+            } else {
+                result.add(cur)
             }
         }
-        if (slots.size < 3) return emptyList()
-        return slots.distinctBy { it.startMinutes to it.endMinutes }.sortedBy { it.startMinutes }
+        return result
     }
 
     private fun unescapeJsString(input: String): String {
@@ -451,39 +398,10 @@ object ScheduleParser {
             .replace("\\\\\\"", "\\"")
     }
 
-    private fun extractRelevantSection(text: String, queueTag: String, addressParts: List<String>): String? {
-        val lower = text.lowercase(Locale.getDefault())
-        for (part in addressParts) {
-            val idx = lower.indexOf(part)
-            if (idx >= 0) {
-                val start = maxOf(0, idx - 80)
-                val end = minOf(text.length, idx + 450)
-                val slice = text.substring(start, end)
-                if (parseWindowsFromText(slice).isNotEmpty()) {
-                    return slice
-                }
-            }
-        }
-
-        val tagLower = queueTag.trim().lowercase(Locale.getDefault())
-        if (tagLower.isNotEmpty()) {
-            val idxTag = lower.indexOf(tagLower)
-            if (idxTag >= 0) {
-                val start = maxOf(0, idxTag - 40)
-                val end = minOf(text.length, idxTag + 350)
-                val slice = text.substring(start, end)
-                if (parseWindowsFromText(slice).isNotEmpty()) {
-                    return slice
-                }
-            }
-        }
-        return null
-    }
-
     fun parseWindowsFromText(source: String): List<TimeWindow> {
-        val regex = Regex(\"\"\"(\\d{1,2})[:.](\\d{2})\\s*[-–—]\\s*(\\d{1,2})[:.](\\d{2})\"\"\")
+        val fullTimeRegex = Regex(\"\"\"(\\d{1,2})[:.](\\d{2})\\s*[-–—]\\s*(\\d{1,2})[:.](\\d{2})\"\"\")
         val result = mutableListOf<TimeWindow>()
-        for (m in regex.findAll(source)) {
+        for (m in fullTimeRegex.findAll(source)) {
             val sh = m.groupValues[1].toIntOrNull() ?: continue
             val sm = m.groupValues[2].toIntOrNull() ?: continue
             val eh = m.groupValues[3].toIntOrNull() ?: continue
@@ -496,6 +414,16 @@ object ScheduleParser {
                 }
             }
         }
+
+        val hourSlotRegex = Regex(\"\"\"\\b([01]?\\d|2[0-3])\\s*[-–—]\\s*([01]?\\d|2[0-4])\\b\"\"\")
+        for (m in hourSlotRegex.findAll(source)) {
+            val h1 = m.groupValues[1].toIntOrNull() ?: continue
+            val h2 = m.groupValues[2].toIntOrNull() ?: continue
+            if (h2 == h1 + 1 && h1 in 0..23 && h2 in 1..24) {
+                result.add(TimeWindow(h1 * 60, h2 * 60))
+            }
+        }
+
         return result.distinctBy { it.startMinutes to it.endMinutes }.sortedBy { it.startMinutes }
     }
 
@@ -587,12 +515,12 @@ import android.widget.RemoteViews
 class SvitloWidget : AppWidgetProvider() {
 
     override fun onEnabled(context: Context) {
-        super.onEnabled(context, )
+        super.onEnabled(context)
         scheduleMinuteTick(context)
     }
 
     override fun onDisabled(context: Context) {
-        super.onDisabled(context, )
+        super.onDisabled(context)
         cancelMinuteTick(context)
     }
 
@@ -676,20 +604,13 @@ class SvitloWidget : AppWidgetProvider() {
 
         fun updateSingleWidget(context: Context, mgr: AppWidgetManager, widgetId: Int) {
             val prefs = context.getSharedPreferences("svitlo_prefs", Context.MODE_PRIVATE)
-            val queueTag = prefs.getString("queue_tag", "2.2") ?: "2.2"
-            val city = prefs.getString("city", "") ?: ""
-            val street = prefs.getString("street", "") ?: ""
-            val house = prefs.getString("house", "") ?: ""
             val intervalsRaw = prefs.getString("intervals_raw", "") ?: ""
 
             val windows = ScheduleParser.parseWindowsFromText(intervalsRaw)
             val state = ScheduleParser.evaluateNow(windows)
 
             val views = RemoteViews(context.packageName, R.layout.widget_layout)
-            views.setTextViewText(R.id.tvWidgetTag, "Черга $queueTag")
-
-            val addrLine = listOf(city, street, house).filter { it.isNotBlank() }.joinToString(", ")
-            views.setTextViewText(R.id.tvWidgetAddress, if (addrLine.isNotBlank()) addrLine else "Адреса не задана")
+            views.setTextViewText(R.id.tvWidgetTag, "Вінницяобленерго")
 
             if (windows.isEmpty()) {
                 views.setInt(R.id.widgetGlowBox, "setBackgroundResource", R.drawable.widget_glow_neutral)
@@ -745,22 +666,14 @@ import android.webkit.CookieManager
 import android.webkit.WebChromeClient
 import android.webkit.WebView
 import android.webkit.WebViewClient
-import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.EditText
-import android.widget.Spinner
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 
 class MainActivity : AppCompatActivity() {
 
     private val targetUrl = "https://disconnection.voe.com.ua/"
-
-    private val tags = listOf(
-        "1.1", "1.2", "2.1", "2.2",
-        "3.1", "3.2", "4.1", "4.2",
-        "5.1", "5.2", "6.1", "6.2"
-    )
 
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -770,10 +683,6 @@ class MainActivity : AppCompatActivity() {
         SvitloWidget.updateAll(this)
 
         val prefs = getSharedPreferences("svitlo_prefs", Context.MODE_PRIVATE)
-        val spQueue = findViewById<Spinner>(R.id.spQueue)
-        val etCity = findViewById<EditText>(R.id.etCity)
-        val etStreet = findViewById<EditText>(R.id.etStreet)
-        val etHouse = findViewById<EditText>(R.id.etHouse)
         val btnReloadSite = findViewById<Button>(R.id.btnReloadSite)
         val btnFetch = findViewById<Button>(R.id.btnFetch)
         val webView = findViewById<WebView>(R.id.webView)
@@ -781,16 +690,6 @@ class MainActivity : AppCompatActivity() {
         val btnSave = findViewById<Button>(R.id.btnSave)
         val tvLog = findViewById<TextView>(R.id.tvLog)
 
-        val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, tags)
-        spQueue.adapter = adapter
-
-        val savedTag = prefs.getString("queue_tag", "2.2") ?: "2.2"
-        val idx = tags.indexOf(savedTag).coerceAtLeast(0)
-        spQueue.setSelection(idx)
-
-        etCity.setText(prefs.getString("city", ""))
-        etStreet.setText(prefs.getString("street", ""))
-        etHouse.setText(prefs.getString("house", ""))
         etIntervals.setText(prefs.getString("intervals_raw", ""))
 
         CookieManager.getInstance().setAcceptCookie(true)
@@ -818,45 +717,83 @@ class MainActivity : AppCompatActivity() {
         }
 
         btnFetch.setOnClickListener {
-            val qTag = tags[spQueue.selectedItemPosition]
-            val city = etCity.text.toString().trim()
-            val street = etStreet.text.toString().trim()
-            val house = etHouse.text.toString().trim()
+            tvLog.text = "Зчитування активних відключень зі сторінки..."
+            val extractScript = \"\"\"
+                (function() {
+                    function isColoredOrActive(el) {
+                        if (!el) return false;
+                        var cs = window.getComputedStyle(el);
+                        var bg = (cs.backgroundColor || '').replace(/\\s+/g, '');
+                        if (bg && bg !== 'rgba(0,0,0,0)' && bg !== 'transparent') {
+                            var m = bg.match(/rgba?\\((\\d+),(\\d+),(\\d+)/i);
+                            if (m) {
+                                var r = parseInt(m[1], 10), g = parseInt(m[2], 10), b = parseInt(m[3], 10);
+                                var isNeutralGray = (Math.abs(r - g) < 18 && Math.abs(g - b) < 18);
+                                if (!isNeutralGray) return true;
+                            }
+                        }
+                        var cls = (el.className || '').toString().toLowerCase();
+                        if (/active|outage|off|disconnection|danger|warn|orange|red|selected/.test(cls)) return true;
+                        var attr = (el.getAttribute('data-status') || el.getAttribute('aria-checked') || '').toLowerCase();
+                        if (/active|outage|off|true|1/.test(attr)) return true;
+                        return false;
+                    }
 
-            tvLog.text = "Зчитування інтервалів зі сторінки..."
-            webView.evaluateJavascript("(function() { return document.body ? document.body.innerText : ''; })();") { rawResult ->
-                val (windows, statusMsg) = ScheduleParser.parseFromPageText(
-                    rawResult ?: "",
-                    qTag,
-                    city,
-                    street,
-                    house
-                )
+                    var found = [];
+                    var rows = document.querySelectorAll('tr, .row, [class*="row"], [class*="slot"], [class*="item"], li, div');
+                    var slotRe = /\\b([01]?\\d|2[0-3])\\s*[-–—]\\s*([01]?\\d|2[0-4])\\b/;
+
+                    for (var i = 0; i < rows.length; i++) {
+                        var row = rows[i];
+                        if (row.children.length > 8) continue;
+                        var txt = (row.innerText || '').trim();
+                        if (!txt || txt.length > 140) continue;
+                        var match = txt.match(slotRe);
+                        if (!match) continue;
+
+                        var h1 = parseInt(match[1], 10);
+                        var h2 = parseInt(match[2], 10);
+                        if (h2 !== h1 + 1) continue;
+
+                        var active = isColoredOrActive(row);
+                        if (!active) {
+                            var descendants = row.querySelectorAll('*');
+                            for (var j = 0; j < descendants.length; j++) {
+                                if (isColoredOrActive(descendants[j])) {
+                                    active = true;
+                                    break;
+                                }
+                            }
+                        }
+
+                        if (active) {
+                            found.push(match[1] + '-' + match[2]);
+                        }
+                    }
+
+                    return found.join(', ');
+                })();
+            \"\"\".trimIndent()
+
+            webView.evaluateJavascript(extractScript) { rawResult ->
+                val (windows, statusMsg) = ScheduleParser.parseActiveOutagesFromJsResult(rawResult ?: "")
                 val formatted = ScheduleParser.formatWindows(windows)
                 if (formatted.isNotEmpty()) {
                     etIntervals.setText(formatted)
                     tvLog.text = "$statusMsg\\nІнтервали: $formatted"
                 } else {
-                    tvLog.text = "$statusMsg\\nМожете ввести інтервали вручну (напр. 09:00-13:00)"
+                    tvLog.text = "$statusMsg\\nМожете ввести інтервали вручну (напр. 14:00-16:00)"
                 }
             }
         }
 
         btnSave.setOnClickListener {
-            val qTag = tags[spQueue.selectedItemPosition]
-            val city = etCity.text.toString().trim()
-            val street = etStreet.text.toString().trim()
-            val house = etHouse.text.toString().trim()
             val intervalsText = etIntervals.text.toString().trim()
 
             val parsed = ScheduleParser.parseWindowsFromText(intervalsText)
             val normalized = ScheduleParser.formatWindows(parsed)
 
             prefs.edit()
-                .putString("queue_tag", qTag)
-                .putString("city", city)
-                .putString("street", street)
-                .putString("house", house)
                 .putString("intervals_raw", normalized.ifEmpty { intervalsText })
                 .apply()
 
