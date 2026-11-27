@@ -93,6 +93,7 @@ dependencies {
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
                 <action android:name="com.svitlo.vinnytsia.ACTION_REFRESH" />
+                <action android:name="com.svitlo.vinnytsia.ACTION_MINUTE_TICK" />
             </intent-filter>
             <meta-data
                 android:name="android.appwidget.provider"
@@ -116,11 +117,11 @@ dependencies {
     <corners android:radius="20dp" />
     <gradient
         android:angle="135"
-        android:startColor="#131C31"
-        android:endColor="#0B1120" />
+        android:startColor="#0E3A5D"
+        android:endColor="#06182B" />
     <stroke
-        android:width="1dp"
-        android:color="#263554" />
+        android:width="1.5dp"
+        android:color="#1D6FA5" />
 </shape>
 """,
     "app/src/main/res/drawable/widget_glow_light_on.xml": """<?xml version="1.0" encoding="utf-8"?>
@@ -129,11 +130,11 @@ dependencies {
     <corners android:radius="14dp" />
     <gradient
         android:angle="90"
-        android:startColor="#143D33"
-        android:endColor="#0D241F" />
+        android:startColor="#145A44"
+        android:endColor="#0A3326" />
     <stroke
-        android:width="1dp"
-        android:color="#2DD4BF" />
+        android:width="1.5dp"
+        android:color="#34D399" />
 </shape>
 """,
     "app/src/main/res/drawable/widget_glow_outage.xml": """<?xml version="1.0" encoding="utf-8"?>
@@ -142,11 +143,11 @@ dependencies {
     <corners android:radius="14dp" />
     <gradient
         android:angle="90"
-        android:startColor="#421820"
-        android:endColor="#230D13" />
+        android:startColor="#6E1B24"
+        android:endColor="#3D0E14" />
     <stroke
-        android:width="1dp"
-        android:color="#FB7185" />
+        android:width="1.5dp"
+        android:color="#F87171" />
 </shape>
 """,
     "app/src/main/res/drawable/widget_glow_neutral.xml": """<?xml version="1.0" encoding="utf-8"?>
@@ -155,10 +156,10 @@ dependencies {
     <corners android:radius="14dp" />
     <gradient
         android:angle="90"
-        android:startColor="#3A2B12"
-        android:endColor="#1F170A" />
+        android:startColor="#5C4012"
+        android:endColor="#332208" />
     <stroke
-        android:width="1dp"
+        android:width="1.5dp"
         android:color="#FBBF24" />
 </shape>
 """,
@@ -166,7 +167,7 @@ dependencies {
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="rectangle">
     <corners android:radius="999dp" />
-    <solid android:color="#1E293B" />
+    <solid android:color="#13466E" />
 </shape>
 """,
     "app/src/main/res/layout/widget_layout.xml": """<?xml version="1.0" encoding="utf-8"?>
@@ -207,7 +208,7 @@ dependencies {
             android:gravity="center"
             android:maxLines="1"
             android:text="Шаргород"
-            android:textColor="#94A3B8"
+            android:textColor="#BAE6FD"
             android:textSize="10sp" />
 
         <TextView
@@ -218,7 +219,7 @@ dependencies {
             android:paddingHorizontal="8dp"
             android:paddingVertical="2dp"
             android:text="↻"
-            android:textColor="#E2E8F0"
+            android:textColor="#F0F9FF"
             android:textSize="14sp"
             android:textStyle="bold" />
     </LinearLayout>
@@ -241,8 +242,8 @@ dependencies {
             android:layout_height="wrap_content"
             android:gravity="center"
             android:maxLines="1"
-            android:text="Світло є"
-            android:textColor="#34D399"
+            android:text="💡 Світло є"
+            android:textColor="#4ADE80"
             android:textSize="17sp"
             android:textStyle="bold" />
 
@@ -254,7 +255,7 @@ dependencies {
             android:gravity="center"
             android:maxLines="1"
             android:text="Вимкнення о 22:00"
-            android:textColor="#34D399"
+            android:textColor="#4ADE80"
             android:textSize="13sp"
             android:textStyle="bold" />
 
@@ -266,7 +267,7 @@ dependencies {
             android:gravity="center"
             android:maxLines="1"
             android:text="Залишилось: 2 год 33 хв"
-            android:textColor="#6EE7B7"
+            android:textColor="#86EFAC"
             android:textSize="13sp"
             android:textStyle="bold" />
     </LinearLayout>
@@ -403,6 +404,11 @@ object ScheduleParser {
             return Pair(emptyList(), "Сторінка ще порожня або не завантажилась")
         }
 
+        val hourSlots = extractHourSlots(normalized)
+        if (hourSlots.isNotEmpty()) {
+            return Pair(hourSlots, "Розпарсено годинні інтервали (${hourSlots.size})")
+        }
+
         val addressParts = listOf(city, street, house)
             .map { it.trim().lowercase(Locale.getDefault()) }
             .filter { it.isNotEmpty() }
@@ -413,8 +419,22 @@ object ScheduleParser {
             val sourceLabel = if (scoped != null) "знайдено у фрагменті адреси/черги" else "знайдено на сторінці"
             Pair(windows, "Інтервали розпарсено ($sourceLabel)")
         } else {
-            Pair(emptyList(), "На відкритій сторінці інтервали ГГ:ХХ-ГГ:ХХ не знайдено")
+            Pair(emptyList(), "На відкритій сторінці інтервали не знайдено")
         }
+    }
+
+    private fun extractHourSlots(text: String): List<TimeWindow> {
+        val slotRegex = Regex(\"\"\"\\b([01]?\\d|2[0-3])\\s*[-–—]\\s*([01]?\\d|2[0-4])\\b\"\"\")
+        val slots = mutableListOf<TimeWindow>()
+        for (m in slotRegex.findAll(text)) {
+            val h1 = m.groupValues[1].toIntOrNull() ?: continue
+            val h2 = m.groupValues[2].toIntOrNull() ?: continue
+            if (h2 == h1 + 1 && h1 in 0..23 && h2 in 1..24) {
+                slots.add(TimeWindow(h1 * 60, h2 * 60))
+            }
+        }
+        if (slots.size < 3) return emptyList()
+        return slots.distinctBy { it.startMinutes to it.endMinutes }.sortedBy { it.startMinutes }
     }
 
     private fun unescapeJsString(input: String): String {
@@ -553,6 +573,7 @@ object ScheduleParser {
 """,
     "app/src/main/java/com/svitlo/vinnytsia/SvitloWidget.kt": """package com.svitlo.vinnytsia
 
+import android.app.AlarmManager
 import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
@@ -560,11 +581,23 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.graphics.Color
+import android.os.Build
 import android.widget.RemoteViews
 
 class SvitloWidget : AppWidgetProvider() {
 
+    override fun onEnabled(context: Context) {
+        super.onEnabled(context, )
+        scheduleMinuteTick(context)
+    }
+
+    override fun onDisabled(context: Context) {
+        super.onDisabled(context, )
+        cancelMinuteTick(context)
+    }
+
     override fun onUpdate(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray) {
+        scheduleMinuteTick(context)
         for (id in appWidgetIds) {
             updateSingleWidget(context, appWidgetManager, id)
         }
@@ -572,22 +605,72 @@ class SvitloWidget : AppWidgetProvider() {
 
     override fun onReceive(context: Context, intent: Intent) {
         super.onReceive(context, intent)
-        if (intent.action == ACTION_REFRESH || intent.action == Intent.ACTION_TIME_TICK) {
+        if (
+            intent.action == ACTION_REFRESH ||
+            intent.action == ACTION_MINUTE_TICK ||
+            intent.action == Intent.ACTION_TIME_TICK ||
+            intent.action == AppWidgetManager.ACTION_APPWIDGET_UPDATE
+        ) {
             val mgr = AppWidgetManager.getInstance(context)
             val ids = mgr.getAppWidgetIds(ComponentName(context, SvitloWidget::class.java))
-            onUpdate(context, mgr, ids)
+            if (ids.isNotEmpty()) {
+                for (id in ids) {
+                    updateSingleWidget(context, mgr, id)
+                }
+                scheduleMinuteTick(context)
+            }
         }
     }
 
     companion object {
         const val ACTION_REFRESH = "com.svitlo.vinnytsia.ACTION_REFRESH"
+        const val ACTION_MINUTE_TICK = "com.svitlo.vinnytsia.ACTION_MINUTE_TICK"
+
+        private fun tickPendingIntent(context: Context): PendingIntent {
+            val intent = Intent(context, SvitloWidget::class.java).apply {
+                action = ACTION_MINUTE_TICK
+            }
+            return PendingIntent.getBroadcast(
+                context,
+                77,
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+        }
+
+        fun scheduleMinuteTick(context: Context) {
+            val mgr = AppWidgetManager.getInstance(context)
+            val ids = mgr.getAppWidgetIds(ComponentName(context, SvitloWidget::class.java))
+            if (ids.isEmpty()) return
+
+            val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as? AlarmManager ?: return
+            val triggerAt = System.currentTimeMillis() + 60_000L
+            val pi = tickPendingIntent(context)
+
+            try {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAt, pi)
+                } else {
+                    alarmManager.set(AlarmManager.RTC_WAKEUP, triggerAt, pi)
+                }
+            } catch (_: SecurityException) {
+                alarmManager.set(AlarmManager.RTC_WAKEUP, triggerAt, pi)
+            }
+        }
+
+        fun cancelMinuteTick(context: Context) {
+            val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as? AlarmManager ?: return
+            alarmManager.cancel(tickPendingIntent(context))
+        }
 
         fun updateAll(context: Context) {
             val mgr = AppWidgetManager.getInstance(context)
             val ids = mgr.getAppWidgetIds(ComponentName(context, SvitloWidget::class.java))
             if (ids.isNotEmpty()) {
-                val provider = SvitloWidget()
-                provider.onUpdate(context, mgr, ids)
+                for (id in ids) {
+                    updateSingleWidget(context, mgr, id)
+                }
+                scheduleMinuteTick(context)
             }
         }
 
@@ -610,28 +693,28 @@ class SvitloWidget : AppWidgetProvider() {
 
             if (windows.isEmpty()) {
                 views.setInt(R.id.widgetGlowBox, "setBackgroundResource", R.drawable.widget_glow_neutral)
-                views.setTextViewText(R.id.tvWidgetStatus, "Немає графіка")
+                views.setTextViewText(R.id.tvWidgetStatus, "⏳ Немає графіка")
                 views.setTextColor(R.id.tvWidgetStatus, Color.parseColor("#FBBF24"))
                 views.setTextViewText(R.id.tvWidgetEventTime, "--:--")
                 views.setTextColor(R.id.tvWidgetEventTime, Color.parseColor("#FBBF24"))
                 views.setTextViewText(R.id.tvWidgetCountdown, "Натисніть для налаштування")
-                views.setTextColor(R.id.tvWidgetCountdown, Color.parseColor("#FDE68A"))
+                views.setTextColor(R.id.tvWidgetCountdown, Color.parseColor("#FEF08A"))
             } else if (state.isOutageNow) {
                 views.setInt(R.id.widgetGlowBox, "setBackgroundResource", R.drawable.widget_glow_outage)
-                views.setTextViewText(R.id.tvWidgetStatus, "Відключено")
-                views.setTextColor(R.id.tvWidgetStatus, Color.parseColor("#F87171"))
+                views.setTextViewText(R.id.tvWidgetStatus, "⚫ Відключено")
+                views.setTextColor(R.id.tvWidgetStatus, Color.parseColor("#FF5A6E"))
                 views.setTextViewText(R.id.tvWidgetEventTime, state.eventTimeText)
-                views.setTextColor(R.id.tvWidgetEventTime, Color.parseColor("#F87171"))
+                views.setTextColor(R.id.tvWidgetEventTime, Color.parseColor("#FF5A6E"))
                 views.setTextViewText(R.id.tvWidgetCountdown, state.countdownText)
                 views.setTextColor(R.id.tvWidgetCountdown, Color.parseColor("#FCA5A5"))
             } else {
                 views.setInt(R.id.widgetGlowBox, "setBackgroundResource", R.drawable.widget_glow_light_on)
-                views.setTextViewText(R.id.tvWidgetStatus, "Світло є")
-                views.setTextColor(R.id.tvWidgetStatus, Color.parseColor("#34D399"))
+                views.setTextViewText(R.id.tvWidgetStatus, "💡 Світло є")
+                views.setTextColor(R.id.tvWidgetStatus, Color.parseColor("#4ADE80"))
                 views.setTextViewText(R.id.tvWidgetEventTime, state.eventTimeText)
-                views.setTextColor(R.id.tvWidgetEventTime, Color.parseColor("#34D399"))
+                views.setTextColor(R.id.tvWidgetEventTime, Color.parseColor("#4ADE80"))
                 views.setTextViewText(R.id.tvWidgetCountdown, state.countdownText)
-                views.setTextColor(R.id.tvWidgetCountdown, Color.parseColor("#6EE7B7"))
+                views.setTextColor(R.id.tvWidgetCountdown, Color.parseColor("#86EFAC"))
             }
 
             val openIntent = Intent(context, MainActivity::class.java)
@@ -683,6 +766,8 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+        SvitloWidget.updateAll(this)
 
         val prefs = getSharedPreferences("svitlo_prefs", Context.MODE_PRIVATE)
         val spQueue = findViewById<Spinner>(R.id.spQueue)
