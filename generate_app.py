@@ -114,13 +114,13 @@ dependencies {
     "app/src/main/res/drawable/widget_bg_card.xml": """<?xml version="1.0" encoding="utf-8"?>
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="rectangle">
-    <corners android:radius="20dp" />
+    <corners android:radius="18dp" />
     <gradient
         android:angle="135"
         android:startColor="#0E3A5D"
         android:endColor="#06182B" />
     <stroke
-        android:width="1.5dp"
+        android:width="1dp"
         android:color="#1D6FA5" />
 </shape>
 """,
@@ -133,7 +133,7 @@ dependencies {
         android:startColor="#145A44"
         android:endColor="#0A3326" />
     <stroke
-        android:width="1.5dp"
+        android:width="2dp"
         android:color="#34D399" />
 </shape>
 """,
@@ -146,7 +146,7 @@ dependencies {
         android:startColor="#6E1B24"
         android:endColor="#3D0E14" />
     <stroke
-        android:width="1.5dp"
+        android:width="2dp"
         android:color="#F87171" />
 </shape>
 """,
@@ -159,14 +159,14 @@ dependencies {
         android:startColor="#5C4012"
         android:endColor="#332208" />
     <stroke
-        android:width="1.5dp"
+        android:width="2dp"
         android:color="#FBBF24" />
 </shape>
 """,
     "app/src/main/res/drawable/widget_pill_tag.xml": """<?xml version="1.0" encoding="utf-8"?>
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="rectangle">
-    <corners android:radius="999dp" />
+    <corners android:radius="16dp" />
     <solid android:color="#13466E" />
 </shape>
 """,
@@ -178,7 +178,10 @@ dependencies {
     android:background="@drawable/widget_bg_card"
     android:gravity="center_horizontal"
     android:orientation="vertical"
-    android:padding="10dp">
+    android:paddingLeft="10dp"
+    android:paddingTop="10dp"
+    android:paddingRight="10dp"
+    android:paddingBottom="10dp">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -191,8 +194,10 @@ dependencies {
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:background="@drawable/widget_pill_tag"
-            android:paddingHorizontal="8dp"
-            android:paddingVertical="2dp"
+            android:paddingLeft="8dp"
+            android:paddingTop="2dp"
+            android:paddingRight="8dp"
+            android:paddingBottom="2dp"
             android:text="Вінницяобленерго"
             android:textColor="#7DD3FC"
             android:textSize="11sp"
@@ -208,8 +213,10 @@ dependencies {
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:background="@drawable/widget_pill_tag"
-            android:paddingHorizontal="8dp"
-            android:paddingVertical="2dp"
+            android:paddingLeft="8dp"
+            android:paddingTop="2dp"
+            android:paddingRight="8dp"
+            android:paddingBottom="2dp"
             android:text="↻"
             android:textColor="#F0F9FF"
             android:textSize="14sp"
@@ -225,8 +232,10 @@ dependencies {
         android:background="@drawable/widget_glow_neutral"
         android:gravity="center"
         android:orientation="vertical"
-        android:paddingHorizontal="8dp"
-        android:paddingVertical="6dp">
+        android:paddingLeft="8dp"
+        android:paddingTop="6dp"
+        android:paddingRight="8dp"
+        android:paddingBottom="6dp">
 
         <TextView
             android:id="@+id/tvWidgetStatus"
@@ -309,7 +318,7 @@ dependencies {
         <WebView
             android:id="@+id/webView"
             android:layout_width="match_parent"
-            android:layout_height="320dp"
+            android:layout_height="340dp"
             android:layout_marginTop="10dp" />
 
         <EditText
@@ -317,7 +326,7 @@ dependencies {
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
-            android:hint="Інтервали відключень (наприклад: 14:00-16:00, 18:00-19:00)"
+            android:hint="Інтервали відключень (наприклад: 08:00-10:00, 14:00-16:00)"
             android:inputType="text" />
 
         <Button
@@ -362,9 +371,9 @@ object ScheduleParser {
         val windows = parseWindowsFromText(unescaped)
         val merged = mergeAdjacentWindows(windows)
         return if (merged.isNotEmpty()) {
-            Pair(merged, "Взято лише слоти відключень (${merged.size})")
+            Pair(merged, "Розпізнано відключення (жовті/червоні клітинки): ${formatWindows(merged)}")
         } else {
-            Pair(emptyList(), "Активних позначок відключень у таблиці не знайдено")
+            Pair(emptyList(), "У таблиці відключень (жовті/червоні клітинки) не знайдено")
         }
     }
 
@@ -662,6 +671,7 @@ class SvitloWidget : AppWidgetProvider() {
 import android.annotation.SuppressLint
 import android.content.Context
 import android.os.Bundle
+import android.view.MotionEvent
 import android.webkit.CookieManager
 import android.webkit.WebChromeClient
 import android.webkit.WebView
@@ -670,12 +680,15 @@ import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 class MainActivity : AppCompatActivity() {
 
     private val targetUrl = "https://disconnection.voe.com.ua/"
 
-    @SuppressLint("SetJavaScriptEnabled")
+    @SuppressLint("SetJavaScriptEnabled", "ClickableViewAccessibility")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -702,11 +715,18 @@ class MainActivity : AppCompatActivity() {
             loadWithOverviewMode = true
             useWideViewPort = true
         }
+        webView.setOnTouchListener { v, event ->
+            when (event.action) {
+                MotionEvent.ACTION_DOWN, MotionEvent.ACTION_MOVE ->
+                    v.parent?.requestDisallowInterceptTouchEvent(true)
+            }
+            false
+        }
         webView.webChromeClient = WebChromeClient()
         webView.webViewClient = object : WebViewClient() {
             override fun onPageFinished(view: WebView?, url: String?) {
                 super.onPageFinished(view, url)
-                tvLog.text = "Сторінка завантажена (${url ?: targetUrl}). За потреби оновіть список і натисніть Розпарсити зі сторінки."
+                tvLog.text = "Сторінка завантажена (${url ?: targetUrl}). Натисніть Розпарсити зі сторінки."
             }
         }
         webView.loadUrl(targetUrl)
@@ -717,58 +737,76 @@ class MainActivity : AppCompatActivity() {
         }
 
         btnFetch.setOnClickListener {
-            tvLog.text = "Зчитування активних відключень зі сторінки..."
+            val todayShort = SimpleDateFormat("dd.MM", Locale.getDefault()).format(Date())
+            tvLog.text = "Зчитування відключень за $todayShort..."
+
             val extractScript = \"\"\"
                 (function() {
-                    function isColoredOrActive(el) {
+                    var todayStr = "$todayShort";
+                    function isOutageColor(el) {
                         if (!el) return false;
                         var cs = window.getComputedStyle(el);
                         var bg = (cs.backgroundColor || '').replace(/\\s+/g, '');
-                        if (bg && bg !== 'rgba(0,0,0,0)' && bg !== 'transparent') {
-                            var m = bg.match(/rgba?\\((\\d+),(\\d+),(\\d+)/i);
-                            if (m) {
-                                var r = parseInt(m[1], 10), g = parseInt(m[2], 10), b = parseInt(m[3], 10);
-                                var isNeutralGray = (Math.abs(r - g) < 18 && Math.abs(g - b) < 18);
-                                if (!isNeutralGray) return true;
-                            }
+                        var m = bg.match(/rgba?\\((\\d+),(\\d+),(\\d+)/i);
+                        if (m) {
+                            var r = parseInt(m[1], 10), g = parseInt(m[2], 10), b = parseInt(m[3], 10);
+                            // Yellow/amber or red/orange-red outage indicators
+                            var isYellow = (r > 170 && g > 130 && b < 110);
+                            var isRedOrOrange = (r > 165 && g < 150 && b < 110);
+                            if (isYellow || isRedOrOrange) return true;
                         }
                         var cls = (el.className || '').toString().toLowerCase();
-                        if (/active|outage|off|disconnection|danger|warn|orange|red|selected/.test(cls)) return true;
-                        var attr = (el.getAttribute('data-status') || el.getAttribute('aria-checked') || '').toLowerCase();
-                        if (/active|outage|off|true|1/.test(attr)) return true;
+                        if (/yellow|warn|planned|amber|red|danger|applied|done|outage|off/.test(cls)) return true;
                         return false;
                     }
 
+                    function hasOutage(cell) {
+                        if (!cell) return false;
+                        if (isOutageColor(cell)) return true;
+                        var kids = cell.querySelectorAll('*');
+                        for (var k = 0; k < kids.length; k++) {
+                            if (isOutageColor(kids[k])) return true;
+                        }
+                        return false;
+                    }
+
+                    var slotRe = /\\b([01]?\\d|2[0-3])(?:[:.]00)?\\s*[-–—]\\s*([01]?\\d|2[0-4])(?:[:.]00)?\\b/;
+                    var tables = document.querySelectorAll('table');
                     var found = [];
-                    var rows = document.querySelectorAll('tr, .row, [class*="row"], [class*="slot"], [class*="item"], li, div');
-                    var slotRe = /\\b([01]?\\d|2[0-3])\\s*[-–—]\\s*([01]?\\d|2[0-4])\\b/;
 
-                    for (var i = 0; i < rows.length; i++) {
-                        var row = rows[i];
-                        if (row.children.length > 8) continue;
-                        var txt = (row.innerText || '').trim();
-                        if (!txt || txt.length > 140) continue;
-                        var match = txt.match(slotRe);
-                        if (!match) continue;
+                    for (var t = 0; t < tables.length; t++) {
+                        var rows = tables[t].querySelectorAll('tr');
+                        if (rows.length < 2) continue;
 
-                        var h1 = parseInt(match[1], 10);
-                        var h2 = parseInt(match[2], 10);
-                        if (h2 !== h1 + 1) continue;
-
-                        var active = isColoredOrActive(row);
-                        if (!active) {
-                            var descendants = row.querySelectorAll('*');
-                            for (var j = 0; j < descendants.length; j++) {
-                                if (isColoredOrActive(descendants[j])) {
-                                    active = true;
+                        var targetCol = -1;
+                        for (var r = 0; r < rows.length; r++) {
+                            var cells = rows[r].querySelectorAll('th, td');
+                            for (var c = 0; c < cells.length; c++) {
+                                var htxt = (cells[c].innerText || '').trim();
+                                if (htxt.indexOf(todayStr) !== -1) {
+                                    targetCol = c;
                                     break;
                                 }
                             }
+                            if (targetCol !== -1) break;
                         }
+                        if (targetCol === -1) targetCol = 1;
 
-                        if (active) {
-                            found.push(match[1] + '-' + match[2]);
+                        for (var r2 = 0; r2 < rows.length; r2++) {
+                            var cells2 = rows[r2].querySelectorAll('th, td');
+                            if (cells2.length <= targetCol) continue;
+                            var firstTxt = (cells2[0].innerText || '').trim();
+                            var m = firstTxt.match(slotRe);
+                            if (!m) continue;
+                            var h1 = parseInt(m[1], 10);
+                            var h2 = parseInt(m[2], 10);
+                            if (h2 !== h1 + 1) continue;
+
+                            if (hasOutage(cells2[targetCol])) {
+                                found.push(h1 + '-' + h2);
+                            }
                         }
+                        if (found.length > 0) break;
                     }
 
                     return found.join(', ');
@@ -780,9 +818,9 @@ class MainActivity : AppCompatActivity() {
                 val formatted = ScheduleParser.formatWindows(windows)
                 if (formatted.isNotEmpty()) {
                     etIntervals.setText(formatted)
-                    tvLog.text = "$statusMsg\\nІнтервали: $formatted"
+                    tvLog.text = statusMsg
                 } else {
-                    tvLog.text = "$statusMsg\\nМожете ввести інтервали вручну (напр. 14:00-16:00)"
+                    tvLog.text = "$statusMsg\\nМожете ввести інтервали вручну (напр. 08:00-10:00)"
                 }
             }
         }
